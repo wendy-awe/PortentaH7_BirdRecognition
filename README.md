@@ -1,5 +1,5 @@
 # PortentaH7_BirdRecognition
-Bird sound detection project using Portenta H7 + STM32Cube-AI
+Bird sound detection project using Portenta H7 + STM32Cube-AI.
 This project aims to implement a bird recognition system on the Portenta H7 microcontroller.  
 It is developed using STM32CubeIDE and will include source code, documentation, models, and tests.
 
