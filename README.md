@@ -31,8 +31,8 @@ Data → Train in Edge Impulse → Convert in STM32Cube.AI → Build project in 
 
 ### Week 1
 - [x] Installed STM32CubeIDE
-- [ ] Created Portenta H7 project
-- [ ] Blink onboard LED confirmed
+- [x] Created Portenta H7 project
+- [x] Blink onboard LED confirmed
 - [ ] UART "Hello World" working
 - [x] Push to GitHub repository
 
