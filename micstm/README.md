@@ -24,7 +24,22 @@ It walks you through **board detection (DFU & ST-LINK), CubeIDE project creation
 ## 1) Hardware & Software Needed
 
 * **Board:** Arduino Portenta H7 (STM32H747XI MCU) with headers.  
-* **Mic:** Digital I²S MEMS mic (**INMP441**) with header pins.  
+* **Mic:** Digital I²S MEMS mic (**INMP441**) with header pins.
+   ### Microphone (Mic)
+   
+   * **Type:** Digital I²S MEMS microphone  
+   * **Model:** INMP441  
+   * **Connection:** Header pins  
+   
+   **Required Signal Lines:**
+   
+   - **Word Select (LR):** Determines left or right channel  
+   - **Bit Clock (SCK):** Clock signal for data transfer  
+   - **Serial Data (SD):** Audio data output  
+   
+   > The Portenta H7's high-density connectors (J1, J2) provide access to I²S signals, which can be mapped to the INMP441's pins.  
+
+
 * **Programmer:**
 
   * **Preferred:** ST-LINK (ST-LINK V3-MINI recommended; ST-LINK V2 clone often works).  
