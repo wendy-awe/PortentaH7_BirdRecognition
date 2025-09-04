@@ -6,7 +6,7 @@ This README.md is a step-by-step, practical guide to connect, detect, configure,
 
 ## Table of Contents
 
-1. What you need
+1. Hardware & Software Needed
 2. Detect the board (DFU & ST-LINK)
 3. Wire the microphone (INMP441 — I²S)
 4. Create the right project in STM32CubeIDE
@@ -15,20 +15,19 @@ This README.md is a step-by-step, practical guide to connect, detect, configure,
 7. Minimal M4 mic test (DMA + LED on sound)
 8. Build, flash, and run
 9. Verify and tune
-10. Optional: move towards frequency detection / birds
-11. Quick glossary
-12. Common pitfalls checklist
+10. Further: move towards frequency detection / birds
+11. Common pitfalls checklist
 
 ---
 
-## 1) What you need
+## 1) Hardware & Software Needed
 
 * **Board:** Arduino Portenta H7 (STM32H747XI MCU).
 * **Mic:** Digital I²S MEMS mic (suggested: **INMP441** module).
 * **Programmer (choose one):**
 
   * **Preferred:** ST-LINK (ST-LINK V3-MINI recommended; ST-LINK V2 clone often works).
-  * **Alternative:** USB DFU via Portenta's USB‑C (no external programmer required).
+  * **Alternative:** USB DFU via Portenta's USB‑C (no external programmer required).---FAILED
 * **Optional:** Breakout board for Portenta (to access SAI / SWD pins easily).
 * **Cables:** Good USB‑C data cable, 3.3 V jumper wires.
 
@@ -38,18 +37,18 @@ This README.md is a step-by-step, practical guide to connect, detect, configure,
 
 ### Option A — USB DFU (no ST-LINK)
 
-1. Plug Portenta H7 into your PC using a data-capable USB-C cable.
+1. Plug Portenta H7 into PC using a data-capable USB-C cable.
 2. Enter DFU mode: **double‑tap the RESET button quickly**.
-3. On Windows Device Manager you should see **"STM32 BOOTLOADER"** (or similar).
+3. On Windows Device Manager should see **"STM32 BOOTLOADER"** (or similar).
 4. Open **STM32CubeProgrammer** → select **USB** → click **Refresh** → **Connect**.
 
-> If it does not appear: try a different cable/port, install the STM32 USB (WinUSB) driver, and repeat the double-tap.
-
-**Note:** DFU is good for flashing, but you cannot live-debug with breakpoints. For debugging use ST‑LINK.
+- If it does not appear: try a different cable/port, install the STM32 USB (WinUSB) driver, and repeat the double-tap.
+- DFU is good for flashing, but cannot live-debug with breakpoints. For debugging use ST‑LINK.
+#### [Option A Failed] ####
 
 ### Option B — ST-LINK SWD (recommended)
 
-1. Connect your **ST-LINK** to the Portenta (use a breakout board if available):
+1. Connect **ST-LINK** to the Portenta (use a breakout board if available):
 
    * `SWDIO -> SWDIO`
    * `SWCLK -> SWCLK`
@@ -59,15 +58,14 @@ This README.md is a step-by-step, practical guide to connect, detect, configure,
 2. Connect ST-LINK to PC via USB.
 3. Open **STM32CubeProgrammer** → choose **ST-LINK** → **Connect**.
 
-> If ST-LINK connects in the programmer, CubeIDE will also be able to debug.
-
-**Tip:** If you don’t have a breakout board, DFU may be simpler because accessing SWD pins on the Portenta headers is fiddly.
+- If ST-LINK connects in the programmer, CubeIDE will also be able to debug.
+- If don’t have a breakout board, DFU may be simpler because accessing SWD pins on the Portenta headers is fiddly.
 
 ---
 
 ## 3) Wire the microphone (INMP441, I²S)
 
-Wire the microphone module to the Portenta using the SAI1 Block A pins (or equivalent I²S pins on your breakout):
+Wire the microphone module to the Portenta using the SAI1 Block A pins (or equivalent I²S pins on breakout):
 
 | Mic pin        | Portenta (SAI1 Block A) | Notes                                        |
 | -------------- | ----------------------: | -------------------------------------------- |
@@ -77,9 +75,9 @@ Wire the microphone module to the Portenta using the SAI1 Block A pins (or equiv
 | SCK (BCLK)     |            `SAI1_SCK_A` | Bit clock — MCU provides this in Master mode |
 | WS / LR (LRCK) |             `SAI1_FS_A` | Word/frame select (frame sync)               |
 
-> Many INMP441 modules output on a single channel; if the module has an L/R select pin, follow the datasheet.
+- Many INMP441 modules output on a single channel; if the module has an L/R select pin, follow the datasheet.
 
-**Important:** The exact physical pin numbers depend on your breakout/carrier. Use the Portenta H7 pinout and map to **SAI1 Block A** pins.
+- The exact physical pin numbers depend on breakout/carrier. Use the Portenta H7 pinout and map to **SAI1 Block A** pins.
 
 ---
 
@@ -90,7 +88,7 @@ Wire the microphone module to the Portenta using the SAI1 Block A pins (or equiv
 3. In Project Manager → **Advanced Settings**: enable the **Cortex‑M4** project (you will see two projects: M7 and M4). For mic capture, we will work in the **M4** project.
 4. Finish to open the CubeMX configurator.
 
-> You can do the complete mic test in the **M4** project. Add the M7 project later for ML / bird identification.
+- Mic test can be completed in the **M4** project. Add the M7 project later for ML / bird identification.
 
 ---
 
@@ -221,7 +219,7 @@ int main(void)
 
 1. Put Portenta into **DFU** (double-tap RESET).
 2. Open **STM32CubeProgrammer** → USB → Connect.
-3. **Open** your built M4 `.hex` or `.elf` file → **Download**.
+3. **Open** built M4 `.hex` or `.elf` file → **Download**.
 4. Reset the board to run.
 
 ---
@@ -239,7 +237,7 @@ int main(void)
 
 ---
 
-## 10) (Optional) Move towards frequency detection / bird calls
+## 10) (Further) Move towards frequency detection / bird calls
 
 1. Add **CMSIS‑DSP** FFT on the filled buffer, compute the dominant frequency for each buffer.
 2. Only toggle the LED when the dominant frequency is within a bird frequency band (e.g., 3–8 kHz).
@@ -247,16 +245,7 @@ int main(void)
 
 ---
 
-## 11) Quick glossary ("sandwich" style)
-
-* **Buffer** = the plate that holds a batch of audio samples.
-* **DMA** = the conveyor belt that fills the plate from the mic without the CPU copying samples.
-* **M4** = kitchen staff steadily filling plates (real-time capture).
-* **M7** = the head chef doing heavy analysis (FFT/ML).
-
----
-
-## 12) Common pitfalls checklist
+## 11) Common pitfalls checklist
 
 * Wrong pins (SD/SCK/FS must be mapped to SAI1 Block A pins).
 * Mic not powered with the correct voltage (most INMP441 modules are 3.3 V — confirm).
@@ -265,13 +254,4 @@ int main(void)
 * Trying to debug over DFU (breakpoints/printf via SWO not supported) — prefer ST‑LINK for development.
 * No breakout board → SWD pins hard to reach. If you lack a breakout, use DFU for flashing or obtain a breakout.
 
----
 
-If you want, I can also:
-
-* Generate a ready‑to‑paste **M4 project skeleton** (main.c, stm32 init stubs) matching this setup.
-* Add a **CMSIS‑DSP FFT example** and a small UART `printf` helper to view values in a serial terminal.
-
----
-
-*End of README*
