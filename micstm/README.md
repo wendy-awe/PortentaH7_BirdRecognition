@@ -1,4 +1,4 @@
-# Portenta H7 + I²S Microphone (INMP441) — End-to-End Setup (Header & Jumper Version)
+# Portenta H7 + I²S Microphone (INMP441) — End-to-End Setup 
 
 This README.md is a **practical, step-by-step guide** to connect, detect, configure, and test a digital I²S microphone (**INMP441**) on the **Arduino Portenta H7 (STM32H747XI)**.  
 It walks you through **board detection (DFU & ST-LINK), CubeIDE project creation, I²S + clocks + DMA setup, a minimal M4 test (DMA + LED on sound), flashing, and troubleshooting**, updated for **header pin connections with female-to-female jumpers**.  
