@@ -1,257 +1,249 @@
-# Portenta H7 + I²S Microphone (INMP441) — End-to-End Setup
+# Portenta H7 + I²S Microphone (INMP441) — End-to-End Setup (Header & Jumper Version)
 
-This README.md is a step-by-step, practical guide to connect, detect, configure, and test a digital I²S microphone (example: **INMP441**) on the **Arduino Portenta H7 (STM32H747XI)**. It walks you through board detection (DFU & ST-LINK), CubeIDE project creation, SAI/I²S + clocks + DMA setup, a minimal M4 test (DMA + LED on sound), flashing, and troubleshooting.
+This README.md is a **practical, step-by-step guide** to connect, detect, configure, and test a digital I²S microphone (**INMP441**) on the **Arduino Portenta H7 (STM32H747XI)**.  
+It walks you through **board detection (DFU & ST-LINK), CubeIDE project creation, I²S + clocks + DMA setup, a minimal M4 test (DMA + LED on sound), flashing, and troubleshooting**, updated for **header pin connections with female-to-female jumpers**.  
 
 ---
 
 ## Table of Contents
 
-1. Hardware & Software Needed
-2. Detect the board (DFU & ST-LINK)
-3. Wire the microphone (INMP441 — I²S)
-4. Create the right project in STM32CubeIDE
-5. Configure peripherals (SAI/I²S, Clocks, DMA, GPIO, UART)
-6. Generate code
-7. Minimal M4 mic test (DMA + LED on sound)
-8. Build, flash, and run
-9. Verify and tune
-10. Further: move towards frequency detection / birds
-11. Common pitfalls checklist
+1. Hardware & Software Needed  
+2. Connect & Detect the Board (DFU & ST-LINK)  
+3. Wire the Microphone (INMP441 — I²S via headers)  
+4. Create the STM32CubeIDE Project  
+5. Configure Peripherals (I²S, Clocks, DMA, GPIO, UART)  
+6. Generate Code  
+7. Minimal M4 Mic Test (DMA + LED on Sound)  
+8. Build, Flash, and Run  
+9. Verify and Tune  
+10. Further: Move Towards Frequency Detection / Bird Calls  
+11. Common Pitfalls Checklist  
 
 ---
 
 ## 1) Hardware & Software Needed
 
-* **Board:** Arduino Portenta H7 (STM32H747XI MCU).
-* **Mic:** Digital I²S MEMS mic (suggested: **INMP441** module).
-* **Programmer (choose one):**
+* **Board:** Arduino Portenta H7 (STM32H747XI MCU) with headers.  
+* **Mic:** Digital I²S MEMS mic (**INMP441**) with header pins.  
+* **Programmer:**
 
-  * **Preferred:** ST-LINK (ST-LINK V3-MINI recommended; ST-LINK V2 clone often works).
-  * **Alternative:** USB DFU via Portenta's USB‑C (no external programmer required).---FAILED
-* **Optional:** Breakout board for Portenta (to access SAI / SWD pins easily).
-* **Cables:** Good USB‑C data cable, 3.3 V jumper wires.
+  * **Preferred:** ST-LINK (ST-LINK V3-MINI recommended; ST-LINK V2 clone often works).  
+  * **Alternative:** USB DFU via Portenta's USB‑C (no external programmer required, but limited).  
+* **Cables:** USB‑C data cable, female-to-female jumper wires (0.1").  
+* **Optional:** Oscilloscope or USB serial monitor for debugging signals.  
+
+ **Note:** Breakout boards are optional. You can directly use jumper wires if **SAI and SWD pins are accessible on headers**.
 
 ---
 
-## 2) Connect & “Detect the board”
+## 2) Connect & Detect the Board
 
 ### Option A — USB DFU (no ST-LINK)
 
-1. Plug Portenta H7 into PC using a data-capable USB-C cable.
-2. Enter DFU mode: **double‑tap the RESET button quickly**.
-3. On Windows Device Manager should see **"STM32 BOOTLOADER"** (or similar).
-4. Open **STM32CubeProgrammer** → select **USB** → click **Refresh** → **Connect**.
+1. Plug Portenta H7 into PC using a **data-capable USB-C cable**.  
+2. Double-tap the **RESET button** to enter DFU mode.  
+3. On Windows Device Manager, check for **"STM32 BOOTLOADER"**.  
+4. Open **STM32CubeProgrammer → USB → Refresh → Connect**.  
 
-- If it does not appear: try a different cable/port, install the STM32 USB (WinUSB) driver, and repeat the double-tap.
-- DFU is good for flashing, but cannot live-debug with breakpoints. For debugging use ST‑LINK.
-#### [Option A Failed] ####
+- DFU works for flashing but **cannot do live debugging**. Prefer ST-LINK for development.
+
+#### [Option A Failed]  
 
 ### Option B — ST-LINK SWD (recommended)
 
-1. Connect **ST-LINK** to the Portenta (use a breakout board if available):
+1. Connect **ST-LINK** to Portenta headers (jumper wires or breakout):  
 
-   * `SWDIO -> SWDIO`
-   * `SWCLK -> SWCLK`
-   * `NRST -> NRST`
-   * `GND -> GND`
-   * `3V3 -> Vtarget` (so ST-LINK can sense the target voltage)
-2. Connect ST-LINK to PC via USB.
-3. Open **STM32CubeProgrammer** → choose **ST-LINK** → **Connect**.
+| ST-LINK | Portenta Header Pin | Notes |
+|---------|-------------------|-------|
+| SWDIO   | SWDIO              | Data line |
+| SWCLK   | SWCLK              | Clock line |
+| NRST    | NRST               | Reset line |
+| GND     | GND                | Ground |
+| 3V3     | Vtarget            | Sense target voltage |
 
-- If ST-LINK connects in the programmer, CubeIDE will also be able to debug.
-- If don’t have a breakout board, DFU may be simpler because accessing SWD pins on the Portenta headers is fiddly.
+2. Connect ST-LINK to PC via USB.  
+3. Open **STM32CubeProgrammer → ST-LINK → Connect**.  
 
----
-
-## 3) Wire the microphone (INMP441, I²S)
-
-Wire the microphone module to the Portenta using the SAI1 Block A pins (or equivalent I²S pins on breakout):
-
-| Mic pin        | Portenta (SAI1 Block A) | Notes                                        |
-| -------------- | ----------------------: | -------------------------------------------- |
-| VDD            |                   3.3 V | Power (confirm mic voltage)                  |
-| GND            |                     GND | Ground                                       |
-| SD (DATA)      |             `SAI1_SD_A` | I²S data input                               |
-| SCK (BCLK)     |            `SAI1_SCK_A` | Bit clock — MCU provides this in Master mode |
-| WS / LR (LRCK) |             `SAI1_FS_A` | Word/frame select (frame sync)               |
-
-- Many INMP441 modules output on a single channel; if the module has an L/R select pin, follow the datasheet.
-
-- The exact physical pin numbers depend on breakout/carrier. Use the Portenta H7 pinout and map to **SAI1 Block A** pins.
+> If ST-LINK connects, CubeIDE can debug with breakpoints. If not, DFU is the fallback.  
 
 ---
 
-## 4) Create the right project in STM32CubeIDE
+## 3) Wire the Microphone (INMP441, I²S via headers)
 
-1. **File → New → STM32 Project**.
-2. In the MCU/MPU selector search for **STM32H747XIHx** → Next.
-3. In Project Manager → **Advanced Settings**: enable the **Cortex‑M4** project (you will see two projects: M7 and M4). For mic capture, we will work in the **M4** project.
-4. Finish to open the CubeMX configurator.
+Use **female-to-female jumper wires**:
 
-- Mic test can be completed in the **M4** project. Add the M7 project later for ML / bird identification.
+| Mic Pin        | Portenta Pin (I²S2 / SAI2_A) | Notes |
+| -------------- | ---------------------------- | ----- |
+| VDD            | 3.3 V                        | Confirm mic voltage |
+| GND            | GND                          | Ground |
+| SD (DATA)      | PC3 / I²S2_SD                | I²S data input |
+| SCK (BCLK)     | PI1 / I²S2_CK                | Bit clock (MCU provides Master) |
+| WS / LR (LRCK) | P10 / I²S2_WS                | Word/frame select |
+| L/R            | GND (Left) or 3.3V (Right)  | Single channel selection |
+
+- Ensure pins **P10, PI1, PC3** are accessible on headers. Otherwise, solder to high-density connector.
 
 ---
 
-## 5) Configure peripherals (CubeMX inside CubeIDE)
+## 4) Create the STM32CubeIDE Project
 
-### 5.1 SAI (I²S) as Receiver
+1. **File → New → STM32 Project**.  
+2. MCU/MPU selector → **STM32H747XIHx** → Next.  
+3. Project Manager → **Advanced Settings** → enable **Cortex-M4 project** (M4 handles mic capture).  
+4. Finish → CubeMX configurator opens.  
 
-* Peripherals → **SAI1**
+> M7 core can be added later for ML / bird call classification.
 
-  * **Block A** → **Mode:** I²S, **Master Receiver**
-  * **Protocol/Standard:** I²S Philips
-  * **Data size:** 16‑bit or 24‑bit (INMP441 typically 24‑bit; capturing in 32‑bit frames is common)
-  * **Frame length:** 32 bits (common)
-* Confirm `SAI1_SD_A`, `SAI1_SCK_A`, `SAI1_FS_A` are mapped to accessible pins (Pinout tab).
+---
+
+## 5) Configure Peripherals (CubeMX)
+
+### 5.1 I²S (SAI/I²S2) Receiver
+
+* Peripherals → **SAI2 / I²S2**  
+  - Mode: **I²S Master Receiver**  
+  - Standard: **I²S Philips**  
+  - Data size: 16-bit or 24-bit (INMP441 outputs 24-bit, can capture as 32-bit)  
+  - Frame length: 32 bits  
+
+* Map pins:  
+  - WS → P10  
+  - CK → PI1  
+  - SD → PC3  
 
 ### 5.2 Clocks
 
-* Clock Configuration tab:
+* Clock tab → Configure **PLLI2S** or PLL2/3 to generate I²S clock.  
+* Sample rate: **16 kHz** (test) or **48 kHz** (preferred for audio).  
 
-  * Set a PLL (PLL2 or PLL3) to generate a clock source for SAI1 that can produce audio sample rates (e.g., 48 kHz or 44.1 kHz).
-  * For bird audio, **48 kHz** is a good default. For simple tests, **16 kHz** also works.
+### 5.3 DMA for I²S RX
 
-### 5.3 DMA for SAI1 Block A (RX)
+* DMA request → RX (Circular mode)  
+* Memory increment → Enabled  
+* Peripheral increment → Disabled  
+* Data width → Match SAI/I²S data size (16-bit or 32-bit)  
+* FIFO → Off (keep it simple)  
 
-* In **SAI1 → DMA Settings** add an RX DMA request.
+### 5.4 GPIO LED
 
-  * **Mode:** Circular (continuous streaming)
-  * **Memory increment:** Enabled
-  * **Peripheral increment:** Disabled
-  * **Data width:** Halfword (16‑bit) or Word (32‑bit) — match your SAI data size
-  * **FIFO:** Off (keep it simple)
+* Configure **accessible GPIO** as **Output Push-Pull**, low speed.  
 
-### 5.4 GPIO for LED (visual test)
+### 5.5 UART (optional)
 
-* Choose an accessible GPIO pin (for example a carrier board user LED) and configure it as **GPIO Output** (Push‑pull, no pull, low speed).
-
-### 5.5 (Optional) UART for `printf` debugging
-
-* Enable a **USART** or **LPUART** on pins you can access with a USB‑TTL serial adapter (3.3 V).
-* Set **115200 8‑N‑1**.
+* Enable **USART/LPUART** for printf debugging  
+* Settings: 115200 8-N-1  
 
 ---
 
-## 6) Generate code
+## 6) Generate Code
 
-* Click **Project → Generate Code** (or the gear icon).
-* CubeIDE generates `MX_SAI1_Init()`, `MX_DMA_Init()`, `MX_GPIO_Init()`, any UART init, and other skeletons inside the **M4** project.
+* Project → Generate Code (gear icon)  
+* CubeIDE generates:  
+  - `MX_I2S2_Init()`  
+  - `MX_DMA_Init()`  
+  - `MX_GPIO_Init()`  
+  - UART init if enabled  
 
 ---
 
-## 7) Minimal M4 mic test (DMA + LED on sound)
+## 7) Minimal M4 Mic Test (DMA + LED)
 
-**Paste this into the M4 project `Core/Src/main.c` inside the user code regions** (replace `GPIOx` / `GPIO_PIN_y` with the actual LED port/pin you configured):
+Paste into **`main.c`** (user code region):
 
 ```c
 #include "main.h"
-#include <stdlib.h> // for abs
+#include <stdlib.h>
 
-extern SAI_HandleTypeDef hsai_BlockA1;
+extern I2S_HandleTypeDef hi2s2;
 
-#define AUDIO_SAMPLES 1024  // one DMA buffer "plate"
+#define AUDIO_SAMPLES 1024
 static int16_t audio_buffer[AUDIO_SAMPLES];
 static volatile uint8_t buffer_ready = 0;
 
-void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai) {
-  if (hsai->Instance == SAI1_Block_A) {
-    buffer_ready = 1; // DMA finished filling the buffer
-  }
-}
-
-int main(void)
-{
-  HAL_Init();
-  SystemClock_Config();
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_SAI1_Init();
-  // If you enabled UART: MX_USARTx_UART_Init();
-
-  // Start streaming audio into the buffer via DMA
-  HAL_SAI_Receive_DMA(&hsai_BlockA1, (uint8_t*)audio_buffer, AUDIO_SAMPLES);
-
-  while (1) {
-    if (buffer_ready) {
-      buffer_ready = 0;
-
-      // Simple "any sound?" test: sum absolute values
-      uint32_t sum = 0;
-      for (int i = 0; i < AUDIO_SAMPLES; i++) {
-        sum += (uint32_t)abs(audio_buffer[i]);
-      }
-
-      // Basic threshold — adjust after testing in your room
-      if (sum > 50000) {
-        // Toggle LED to show mic activity
-        HAL_GPIO_TogglePin(GPIOx, GPIO_PIN_y); // <-- replace with your LED port/pin
-      }
-
-      // Optional: print a sample or the sum for debugging
-      // printf("sum=%lu, sample0=%d\r\n", sum, audio_buffer[0]);
+void HAL_I2S_RxCpltCallback(I2S_HandleTypeDef *hi2s) {
+    if (hi2s->Instance == SPI2) { // I²S2 uses SPI2
+        buffer_ready = 1;
     }
-  }
 }
-```
 
-**What this does:**
+int main(void) {
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+    MX_DMA_Init();
+    MX_I2S2_Init();
 
-* DMA continuously fills `audio_buffer`.
-* When the buffer is full, the `HAL_SAI_RxCpltCallback` sets `buffer_ready`.
-* The main loop sums absolute sample values and toggles the LED when the sum passes a threshold.
-* Clap/speak near the mic — the LED should react.
+    HAL_I2S_Receive_DMA(&hi2s2, (uint16_t*)audio_buffer, AUDIO_SAMPLES);
 
----
+    while (1) {
+        if (buffer_ready) {
+            buffer_ready = 0;
 
-## 8) Build, flash, and run
+            uint32_t sum = 0;
+            for (int i = 0; i < AUDIO_SAMPLES; i++) sum += abs(audio_buffer[i]);
 
-### If using **ST-LINK** (recommended for debugging)
+            if (sum > 50000) { // adjust threshold
+                HAL_GPIO_TogglePin(GPIOx, GPIO_PIN_y); // LED
+            }
 
-1. Click the **Debug** (bug) icon. Choose the **M4** project debug configuration.
-2. In Debug Configs → ST-LINK settings:
+            // Optional debug
+            // printf("sum=%lu, sample0=%d\r\n", sum, audio_buffer[0]);
+        }
+    }
+}
 
-   * Interface: **SWD**
-   * Frequency: **2–4 MHz** (start safe)
-   * Reset: **Connect under reset** (often safer on H7)
-3. Click **Debug** — CubeIDE will flash and halt at `main()`; press **Resume** (F8) to run.
+## 8) Build, Flash, and Run
 
-### If using **DFU**
+### Using ST-LINK (recommended)
 
-1. Put Portenta into **DFU** (double-tap RESET).
-2. Open **STM32CubeProgrammer** → USB → Connect.
-3. **Open** built M4 `.hex` or `.elf` file → **Download**.
-4. Reset the board to run.
+1. Debug → M4 project → ST-LINK  
+2. Interface → **SWD**, Frequency 2–4 MHz  
+3. Reset → **Connect under reset**  
+4. Debug → CubeIDE flashes → Resume (F8)  
 
----
+### Using DFU (optional)
 
-## 9) Verify and tune
-
-* Clap or speak near the mic — the LED should toggle.
-* If nothing happens:
-
-  * Re-check wiring: `SD ↔ SAI1_SD_A`, `SCK ↔ SAI1_SCK_A`, `FS ↔ SAI1_FS_A`, `3.3V`, `GND`.
-  * Confirm **SAI1 Block A** is configured as **I²S Master Receiver**.
-  * Lower the threshold value (try `20000`) and retest.
-  * Use an oscilloscope/logic analyzer to inspect `SCK` and `SD` signals.
-  * Try a different USB cable/port or reinstall drivers if DFU fails.
-
----
-
-## 10) (Further) Move towards frequency detection / bird calls
-
-1. Add **CMSIS‑DSP** FFT on the filled buffer, compute the dominant frequency for each buffer.
-2. Only toggle the LED when the dominant frequency is within a bird frequency band (e.g., 3–8 kHz).
-3. For species classification: compute spectrogram frames on M4 and send them to M7 (or send raw buffers) for ML inference on the M7 core.
+1. Double-tap **RESET** → DFU mode  
+2. STM32CubeProgrammer → USB → Connect  
+3. Download `.hex` or `.elf` → Reset  
 
 ---
 
-## 11) Common pitfalls checklist
+## 9) Verify and Tune
 
-* Wrong pins (SD/SCK/FS must be mapped to SAI1 Block A pins).
-* Mic not powered with the correct voltage (most INMP441 modules are 3.3 V — confirm).
-* SAI not set as **Master** (many mics expect the MCU to supply the bit clock).
-* DMA not set to **Circular** mode (without circular, streaming will stop after one buffer).
-* Trying to debug over DFU (breakpoints/printf via SWO not supported) — prefer ST‑LINK for development.
-* No breakout board → SWD pins hard to reach. If you lack a breakout, use DFU for flashing or obtain a breakout.
+* Clap or speak → LED should toggle  
+* If not:  
+  - Check wiring (`SD`, `SCK`, `WS`, `VDD`, `GND`)  
+  - Confirm **I²S Master** configuration  
+  - Lower threshold (e.g., `20000`)  
+  - Inspect signals with oscilloscope / logic analyzer  
+  - Try different USB cable / port  
 
+---
 
+## 10) Further: Frequency Detection / Bird Calls
+
+* Apply **CMSIS-DSP FFT** on DMA buffer  
+* Detect dominant frequency → toggle LED if in bird band (2–8 kHz)  
+* Compute spectrogram → send to **M7 core** for ML inference  
+
+---
+
+## 11) Common Pitfalls
+
+* Wrong pins (`SD`/`SCK`/`WS`) must map to **I²S2 / SAI2** pins  
+* Mic voltage incorrect (must be **3.3 V**)  
+* I²S not set to **Master** (MCU must supply clock)  
+* DMA not **Circular** → streaming stops  
+* Debug via DFU → no breakpoints / SWO → use **ST-LINK**  
+* Headers hard to reach → breakout optional  
+
+---
+
+## Summary
+
+1. Wire **INMP441 → Portenta** via headers & female jumpers  
+2. Configure **I²S2 + DMA** in CubeIDE  
+3. Generate code, start DMA reception  
+4. LED or UART debug → values should change when sound is present  
+5. Once confirmed → move to **FFT & ML** for bird call detection  
