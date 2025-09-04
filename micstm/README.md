@@ -191,6 +191,7 @@ int main(void) {
         }
     }
 }
+```
 
 ## 8) Build, Flash, and Run
 
