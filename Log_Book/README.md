@@ -67,4 +67,8 @@ SUPERVISOR		: ASSOC PROF MUHAMMAD MUN’IM BIN AHMAD ZABIDI
 
 3. **Relisted steps to do project and microphone testing using Arduino IDE**
 
+4. **Successfully added CMSIS-DSP and CMSIS-NN libraries to Arduino IDE and verified them with a minimal demo on the Portenta H7.**
+    - CMSIS-DSP : Navigate to <Board Manager> , type "CMSIS-DSP" and install.
+    - CMSIS-NN : Go to [https://github.com/ARM-software/CMSIS-NN.git], navigate to Code, Download zip, open the file, find file Include and Source , and copy them . Go to Document, Arduino, and go to Library, create new file named "CMSIS-NN", and paste <nclude and Source into the file. Refresh Arduino by restarting it, do code demo to make sure library CMSIS-NN is added. If not detected, copy these into the same folder as the .ino: arm_fully_connected_s8.c, arm_nn_vec_mat_mult_t_s8.c, arm_nntables.c.
+
 
