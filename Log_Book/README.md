@@ -60,4 +60,11 @@ SUPERVISOR		: ASSOC PROF MUHAMMAD MUN’IM BIN AHMAD ZABIDI
  
 5. **Explored approach to use FFT for frequency analysis of captured audio to prepare for bird sound recognition.**
 
+## Day 4 – Switching from CubeIDE to Arduino IDE
+1. **Facing issue of needing breakout board or soldering for flashing and debugging purpose.**
+   
+2. **After discussion with supervisor, Arduino IDE is suggested as breakout board is out of budget while soldering is too risky for Portenta H7 board.**
+
+3. **Relisted steps to do project and microphone testing using Arduino IDE**
+
 
