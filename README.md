@@ -1,7 +1,7 @@
 # PortentaH7_BirdRecognition
-Bird sound detection project using Portenta H7 + STM32Cube-AI.
-This project aims to implement a bird recognition system on the Portenta H7 microcontroller.  
-It is developed using STM32CubeIDE and will include source code, documentation, models, and tests.
+Bird sound detection project using Portenta H7 + Arduino IDE.
+This project aims to implement a bird recognition system on the Portenta H7 microcontroller.
+It is developed using Arduino IDE and will include source code, documentation, models, and test. 
 
 ## Repository Structure
 - `src/` : Source code for firmware and application
@@ -14,26 +14,18 @@ It is developed using STM32CubeIDE and will include source code, documentation, 
 
 2. **Train ML model**: Use Edge Impulse (online) to train the model.
 
-3. **Convert model to STM32 code**: Use STM32Cube.AI (inside STM32CubeMX/IDE) to change ML model → C code.
+3. **Convert model to Arduino C/C++ code**: Use Edge Impulse → Arduino Library export (model → .h + .cpp files).
 
-4. **Create STM32 project**: Open STM32CubeIDE, start a new project for Portenta H7 (board config).
+4. **Create Arduino project**: Install required libraries via Library Manager (e.g., CMSIS-DSP, Edge Impulse SDK, I²S for mic, camera library if used).
 
 5. **Add drivers (peripherals)**: Configure GPIO, UART, I²C, SPI, camera, mic (depending on sensors you use).
 
-6. **Integrate ML model**: Copy the C code from Cube.AI into your STM32 project.
+6. **Integrate ML model**: Copy the exported model files (model.cpp, model.h) into your Arduino project.
 
-7. **Build & Flash**: Compile in STM32CubeIDE and upload to Portenta H7.
+7. **Build & Flash**: Compile in Arduino IDE and upload to Portenta H7.
 
-8. **Test & Debug**: Use serial monitor or debugger to check results → adjust if needed.
+8. **Test & Debug**: Use Serial Monitor or debugger to check results → adjust if needed.
 
 *In short*: 
-Data → Train in Edge Impulse → Convert in STM32Cube.AI → Build project in STM32CubeIDE → Upload to H7 → Run & Debug.
-
-### Week 1
-- [x] Installed STM32CubeIDE
-- [x] Created Portenta H7 project
-- [x] Blink onboard LED confirmed
-- [ ] UART "Hello World" working
-- [x] Push to GitHub repository
-
+Data → Train in Edge Impulse → Export Arduino Library → Build project in Arduino IDE → Upload to H7 → Run & Debug.
 
