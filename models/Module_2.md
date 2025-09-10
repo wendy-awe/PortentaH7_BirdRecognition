@@ -273,3 +273,11 @@ Predicted digit: 1, Confidence: 0.9961
 - Confidence: 0.9961 - Very high confidence (~99.61%), which indicates the model is quite certain about its prediction
 
 9. Test Different Digits
+- “digit2” is tried. Confidence is 0.9961. Predicted digit is changed from 1 to 2.
+- “digit3” is tried. Confidence is 0.9961. Predicted digit is changed from 2 to 3.
+- Confidence is Always 0.9961 due to quantization saturation.
+        - Model makes confident predictions → outputs maximum quantized value (127)
+        - Dequantization formula: (127 - zero_point) × scale = 0.9961
+        - All "very confident" predictions map to the same dequantized value
+- The identical confidence is simply an artifact of the limited precision in quantized neural networks where all "very confident" predictions saturate at the maximum value.
+-  This is normal behavior for quantized edge AI models, particularly on datasets like MNIST where models are typically very certain about their classifications.
