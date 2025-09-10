@@ -61,53 +61,74 @@ Use **female-to-female jumper wires**:
 |----------------|----------------------------------|------------------------------|
 | VDD            | 3.3 V                             | Confirm mic voltage          |
 | GND            | GND                               | Ground                       |
-| SD (DATA)      | D7                                | I²S data input               |
-| SCK (BCLK)     | D9                                | Bit clock                    |
-| WS / LR (LRCK) | D6                                | Word select                  |
-| L/R            | GND (Left) or 3.3V (Right)       | Choose channel               |
+| SD (DATA)      | DMIC DO (J1)                      | I²S data input               |
+| SCK (BCLK)     | DMIC CK (J1)                      | Bit clock                    |
+| WS / LR (LRCK) | I2SWS (J1)                        | Word select                  |
+| L/R            | GND (Left)                        | Choose left channel               |
 
 ---
+## 4) Install Arduino I²S Library
+- Install Arduino_AdvancedAnalog from Library Manager
 
-## 4) Test Mic with Arduino I²S Library
+## 5) Test Mic with Arduino I²S Library
 
 ```cpp
-#include <I2S.h>
+#include <Arduino_AdvancedAnalog.h>
+
+// Correct pins for Portenta H7 J1 connector
+// WS = I2SWS, CK = DMIC CK, SDI = DMIC DO
+AdvancedI2S i2s(PB_9, PE_3, PB_2, NC, NC);  
 
 void setup() {
   Serial.begin(115200);
-  if (!I2S.begin(I2S_PHILIPS_MODE, 16000, 32)) {
-    Serial.println("Failed to initialize I2S!");
+  while (!Serial);
+
+  Serial.println("=== INMP441 Mic Test ===");
+
+  // Resolution, sample rate, buffer size, queue depth
+  if (!i2s.begin(AN_I2S_MODE_IN, 16000, 256, 32)) {
+    Serial.println("❌ Failed to start I2S!");
     while (1);
   }
-  Serial.println("I2S Microphone test started...");
+
+  Serial.println("✅ I2S started, listening to INMP441...");
+  Serial.println("Open Serial Plotter to view waveform");
 }
 
 void loop() {
-  int32_t sample = I2S.read();
-  if (sample != 0) {
-    Serial.println(sample);
+  if (i2s.available()) {
+    SampleBuffer buf = i2s.read();
+    for (int i = 0; i < buf.size(); i++) {
+      Serial.println(buf[i]);   // Raw waveform → Serial Plotter
+    }
+    buf.release();
   }
 }
+
 ```
 - Open Tools → Serial Plotter to visualize the waveform.
 - Clap or speak → you should see waveform changes.
 
-## 5) Test Mic with Arduino I²S Library
+## 6) Test Mic with Arduino I²S Library
 
 1. Visualize Audio in Serial Plotter
 2. Go to Tools → Serial Plotter (baud 115200).
 3. Observe real-time waveform changes when audio is detected.
 4. If nothing appears: check wiring, swap WS/BCLK pins, or lower sample rate (e.g., 8000 Hz).
    
-## 6) Integrate CMSIS-DSP (FFT / Filtering)
+## 7) Integrate CMSIS-DSP (FFT / Filtering)
 
 1. Open Library Manager → install Arduino_CMSIS-DSP.
 2. Use it for filtering, FFT, RMS, or other signal processing.
 
 - Example FFT:
 ```cpp
-#include <I2S.h>
+#include <Arduino_AdvancedAnalog.h>
 #include <arm_math.h>
+
+// Correct pins for Portenta H7 J1 connector
+// WS = I2SWS, CK = DMIC CK, SDI = DMIC DO
+AdvancedI2S i2s(PB_9, PE_3, PB_2, NC, NC);  
 
 #define FFT_SIZE 256
 float32_t input[FFT_SIZE];
@@ -115,12 +136,23 @@ float32_t output[FFT_SIZE];
 
 void setup() {
   Serial.begin(115200);
-  I2S.begin(I2S_PHILIPS_MODE, 16000, 32);
+  while (!Serial);
+
+  Serial.println("=== INMP441 FFT Test ===");
+
+  if (!i2s.begin(AN_I2S_MODE_IN, 16000, 256, 32)) {
+    Serial.println("❌ Failed to start I2S!");
+    while (1);
+  }
 }
 
 void loop() {
+  // Collect FFT_SIZE samples
   for (int i = 0; i < FFT_SIZE; i++) {
-    input[i] = (float32_t)I2S.read();
+    while (!i2s.available());
+    SampleBuffer buf = i2s.read();
+    input[i] = (float32_t)buf[0];  // Mono input
+    buf.release();
   }
 
   arm_rfft_fast_instance_f32 fft;
@@ -137,12 +169,12 @@ void loop() {
  > [https://www.pschatzmann.ch/home/2023/07/10/arduino-uno-r4-fft-using-cmsis-dsp/]
  > [https://www.pschatzmann.ch/home/2025/02/21/reverse-fft/]
 
-## 7) Minimal FFT Test on Mic Samples
+## 8) Minimal FFT Test on Mic Samples
 
 1. Clap → strong low-frequency bins.
 2. Voice → multiple harmonics.
 
-## 8) Move Towards ML (CMSIS-NN / TFLite / Edge Impulse)
+## 9) Move Towards ML (CMSIS-NN / TFLite / Edge Impulse)
 
 1. CMSIS-NN directly → low-level NN operators
 2. TensorFlow Lite Micro → load .tflite model for inference
@@ -151,22 +183,22 @@ void loop() {
  > All three automatically use CMSIS-NN under the hood on Cortex-M7.
  > [https://www.dlology.com/blog/how-to-run-deep-learning-model-on-microcontroller-with-cmsis-nn/]
 
-## 9) Verify and Tune
+## 10) Verify and Tune
 
 1. If mic values are always zero → check WS/SCK/SD wiring
 2. If only noise → confirm I2S.begin() sample rate and bit depth match INMP441
 3. If Serial Plotter too fast → print every Nth sample to slow down output
 
-## 10) Common Pitfalls Checklist
+## 11) Common Pitfalls Checklist
 
-1. Wrong pins: D6=WS, D7=SD, D9=BCLK
+1. Wrong pins
 2. Mic voltage: must be 3.3V
 3. Serial baud mismatch: ensure 115200
 4. Buffer overruns: lower FFT size (128 or 64) if needed
 
   > USB cable: must be data-capable
 
-## 11) Summary
+## 12) Summary
 
 1. Install Arduino IDE & Portenta H7 board support
 2. Wire INMP441 → Portenta H7 using jumper wires
