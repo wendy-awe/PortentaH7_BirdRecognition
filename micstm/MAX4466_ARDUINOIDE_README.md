@@ -46,7 +46,7 @@ https://downloads.arduino.cc/packages/package_index.json
 * Tools → Board → Board Manager, search Portenta H7, install.
 * Install Arduino\_TensorFlowLite library from Library Manager.
 
-### 4️⃣ Analog Mic Test (Serial Plotter)
+### 4️⃣ Microphone Amplitude Test (Serial Monitor / Plotter)
 ```cpp
 const int micPin = A0;
 
@@ -55,13 +55,33 @@ void setup() {
 }
 
 void loop() {
-  int sample = analogRead(micPin);
-  Serial.println(sample); // raw ADC value
-  delay(1);
+  int mn = 1024;  // initialize min
+  int mx = 0;     // initialize max
+
+  // collect 10,000 samples quickly
+  for (int i = 0; i < 10000; i++) {
+    int val = analogRead(micPin);
+    mn = min(mn, val); // update minimum
+    mx = max(mx, val); // update maximum
+  }
+
+  int delta = mx - mn; // signal amplitude
+
+  Serial.print("Min = ");
+  Serial.print(mn);
+  Serial.print("\tMax = ");
+  Serial.print(mx);
+  Serial.print("\tDelta = ");
+  Serial.println(delta);
 }
+
 ```
-* Open Serial Plotter to see live waveform.
-* Normalize values: `(analogRead() - 2048)/2048.0` → -1.0 … 1.0
+* Min = lowest sample value (quietest point)
+* Max = highest sample value (loudest point)
+* Delta = difference between max and min = volume level
+
+* Open Serial Monitor to see numbers changing, or Serial Plotter to watch how Min, Max, and Delta vary with sound.
+* Clap, talk, or play music near the mic: Delta will jump higher.
 
 ### 5️⃣ CMSIS-DSP FFT Example
 ```cpp
