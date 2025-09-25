@@ -111,3 +111,5 @@ Serial Monitor output:
 - Let M7 process classification when activity is detected.
 
 - Extend communication protocol (e.g., M4 sends status codes, M7 responds with species names).
+
+
