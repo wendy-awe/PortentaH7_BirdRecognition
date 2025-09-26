@@ -7,12 +7,6 @@ This folder contains project-related documentation:
 - Research findings
 - Final report drafts
 
-### Week 1
-- [x] Installed STM32CubeIDE
-- [ ] Created Portenta H7 project
-- [ ] Blink onboard LED confirmed
-- [ ] UART "Hello World" working
-- [x] Push to GitHub repository
 
 #### Day 1.0 GitHub & Git Workflow Report
 
